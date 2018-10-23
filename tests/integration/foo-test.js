@@ -42,18 +42,18 @@ module('save foo', function(hooks) {
     bar = store.peekRecord('bar', 1);
     baz = store.peekRecord('baz', 1);
 
-    console.log('foo', foo.serialize());
-    console.log('bar', bar.serialize());
-    console.log('baz', baz.serialize());
+    // console.log('foo', foo.serialize());
+    // console.log('bar', bar.serialize());
+    // console.log('baz', baz.serialize());
   });
 
-  test('stuff', function(assert) {
-    foo.get('bar').then(_bar => {
-      assert.deepEqual(_bar, bar);
-    });
+  test('stuff', async function(assert) {
+    const _bar = await foo.get('bar');
 
-    foo.get('baz').then(_baz => {
-      assert.deepEqual(_baz, baz);
-    });
+    assert.deepEqual(_bar, bar);
+
+    const _baz = await foo.get('baz');
+
+    assert.deepEqual(_baz, baz);
   });
 });
