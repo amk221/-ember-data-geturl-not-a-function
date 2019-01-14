@@ -66,7 +66,7 @@ module('save foo', function(hooks) {
   });
 
   test('requesting hasMany regression (2.18 -> 3.7.0)', async function(assert) {
-    assert.expect(8);
+    // assert.expect(8);
 
     let count = 0;
 
@@ -92,9 +92,16 @@ module('save foo', function(hooks) {
     assert.equal(_bars.get('length'), 1);
     assert.equal(store.peekAll('bar').get('length'), 1);
     assert.equal(bar1.name, 'Bar 1');
-    assert.ok(bar1.isDestroying);
+    assert.equal(bar1.isDestroying, true);
+    assert.equal(bar1.isDestroyed, false);
 
     _bars = await foo.get('bars');
+
+    assert.equal(_bars.get('length'), 2);
+    assert.equal(store.peekAll('bar').get('length'), 2);
+    assert.equal(bar1.name, 'Bar 1');
+    assert.equal(bar1.isDestroying, true);
+    assert.equal(bar1.isDestroyed, true); // ?
 
     assert.equal(count, 0, 'should not make a request for bars');
   });
