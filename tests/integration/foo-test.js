@@ -65,7 +65,7 @@ module('save foo', function(hooks) {
     assert.deepEqual(_baz, baz);
   });
 
-  test('requesting hasMany regression', async function(assert) {
+  test('requesting hasMany regression (2.18 -> 3.7.0)', async function(assert) {
     assert.expect(8);
 
     let count = 0;
