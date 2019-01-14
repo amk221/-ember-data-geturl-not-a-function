@@ -1,17 +1,22 @@
 import { module, test } from 'qunit';
 import { setupTest } from 'ember-qunit';
 import { run } from '@ember/runloop';
+import Pretender from 'pretender';
+const { stringify } = JSON;
 
 module('save foo', function(hooks) {
   setupTest(hooks);
 
+  let server;
   let store;
   let foo;
-  let bar;
+  let bar1;
+  let bar2;
   let baz;
 
   hooks.beforeEach(function() {
     store = this.owner.lookup('service:store');
+    server = new Pretender;
 
     run(() => {
       store.pushPayload({
@@ -19,14 +24,18 @@ module('save foo', function(hooks) {
           {
             id: 1,
             name: 'Foo 1',
-            bar: null,
-            baz: 1
+            bars: [1, 2],
+            baz: null
           }
         ],
         bars: [
           {
             id: 1,
             name: 'Bar 1'
+          },
+          {
+            id: 2,
+            name: 'Bar 2'
           }
         ],
         bazs: [
@@ -39,21 +48,54 @@ module('save foo', function(hooks) {
     });
 
     foo = store.peekRecord('foo', 1);
-    bar = store.peekRecord('bar', 1);
+    bar1 = store.peekRecord('bar', 1);
+    bar2 = store.peekRecord('bar', 2);
     baz = store.peekRecord('baz', 1);
-
-    // console.log('foo', foo.serialize());
-    // console.log('bar', bar.serialize());
-    // console.log('baz', baz.serialize());
   });
 
-  test('stuff', async function(assert) {
-    const _bar = await foo.get('bar');
+  hooks.afterEach(function() {
+    server.shutdown();
+  });
 
-    assert.deepEqual(_bar, bar);
+  test('cause getURL is not a function', async function(assert) {
+    assert.expect(1);
 
     const _baz = await foo.get('baz');
 
     assert.deepEqual(_baz, baz);
+  });
+
+  test('requesting hasMany regression', async function(assert) {
+    assert.expect(8);
+
+    let count = 0;
+
+    server.get('/bars/1', () => {
+      count++;
+
+      return [200, {}, stringify({
+        bar: {
+          id: 1,
+          name: 'Bar 1*'
+        }
+      })];
+    });
+
+    let _bars = await foo.get('bars');
+
+    assert.equal(_bars.get('length'), 2);
+    assert.equal(store.peekAll('bar').get('length'), 2);
+    assert.equal(bar1.name, 'Bar 1');
+
+    bar1.unloadRecord();
+
+    assert.equal(_bars.get('length'), 1);
+    assert.equal(store.peekAll('bar').get('length'), 1);
+    assert.equal(bar1.name, 'Bar 1');
+    assert.ok(bar1.isDestroying);
+
+    _bars = await foo.get('bars');
+
+    assert.equal(count, 0, 'should not make a request for bars');
   });
 });
